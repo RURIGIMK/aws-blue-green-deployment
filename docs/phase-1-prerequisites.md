@@ -9,7 +9,7 @@
 
 ## Architecture baseline
 
-Use one custom VPC with two public subnets in separate Availability Zones, an internet gateway and public route table. Deploy one internet-facing Application Load Balancer and two EC2 instances (Blue and Green), each registered in a separate target group. Avoid NAT Gateways and private-subnet egress infrastructure for this cost-conscious demonstration. EC2 instances will accept application traffic only from the ALB security group.
+Use the account's default VPC if it exists and has suitable subnets in at least two Availability Zones. Only create a dedicated VPC if no suitable default VPC exists. Deploy one internet-facing Application Load Balancer and two EC2 instances (Blue and Green), each registered in a separate target group. EC2 instances will accept application traffic only from the ALB security group.
 
 This design uses public EC2 instances for simplicity and cost control. Administrative access should use Systems Manager Session Manager if the required instance profile and connectivity are available. If not, use a temporary SSH rule restricted to the user's current public IP and remove it after use.
 
@@ -25,9 +25,6 @@ Before creating compute or load-balancing resources:
 
 ## Phase 1 verification gates
 
-- [ ] Confirm billing console access.
-- [ ] Agree a maximum project spend in USD.
-- [ ] Create budget and notifications.
 - [ ] Confirm selected region is `us-west-2`.
 - [ ] Confirm EC2, VPC, Elastic Load Balancing and CloudWatch console access.
 - [ ] Inspect service quotas and available Availability Zones.
@@ -45,4 +42,4 @@ Do not capture passwords, access keys, account numbers, payment information or o
 
 ## Status
 
-Architecture baseline documented. No AWS resources have been created. The user has confirmed a blank starting environment and region `us-west-2`. Budget amount remains to be agreed.
+Architecture baseline documented. No AWS resources have been created. The user has confirmed a blank starting environment and region `us-west-2`. Budget creation is excluded because it is not a project deliverable.
