@@ -29,8 +29,8 @@ The listener will forward production traffic to Blue initially. Green will be de
 
 | Resource | Baseline configuration | Purpose |
 |---|---|---|
-| VPC | Default VPC if suitable and permitted | Network boundary |
-| Subnets | Two public subnets in distinct Availability Zones for the ALB; EC2 placement follows account limits | ALB availability and instance connectivity |
+| VPC | One new project VPC (`10.0.0.0/16`) | Network boundary |
+| Subnets | Two public subnets (`10.0.1.0/24` and `10.0.2.0/24`) in distinct Availability Zones | ALB availability and internet connectivity for lab instances |
 | Security groups | ALB security group and EC2 target security group | Restrict inbound access |
 | EC2 Blue | Smallest permitted eligible instance type | Current application version |
 | EC2 Green | Same instance type as Blue | Candidate application version |
@@ -39,7 +39,7 @@ The listener will forward production traffic to Blue initially. Green will be de
 | Application Load Balancer | Internet-facing, HTTP listener for the lab unless HTTPS is available without extra cost | Single entry point and traffic switching |
 | CloudWatch | ALB and EC2 metrics, dashboard, alarms | Operational monitoring |
 
-The project region is confirmed as **US West (Oregon), `us-west-2`**. The AWS account is reported by the user to have full permissions. Actual instance type, AMI, VPC, subnet IDs and ports will be selected only after the account inventory and service quotas are inspected.
+The project region is **US West (Oregon), `us-west-2`**. The user confirms the account has full permissions and the starting environment has no VPCs. The project VPC will use `10.0.0.0/16`, with public subnets `10.0.1.0/24` and `10.0.2.0/24` in two distinct Availability Zones. The exact AZ names will be selected in the console.
 
 ## 4. Network and security rules
 
@@ -51,16 +51,15 @@ The project region is confirmed as **US West (Oregon), `us-west-2`**. The AWS ac
 
 ## 5. Deployment and validation sequence
 
-1. Confirm the AWS account, region, permissions, service quotas and budget constraints.
-2. Inspect the VPC and available subnets; do not create networking resources until the existing setup is understood.
-3. Create the ALB security group and the EC2 target security group.
-4. Create the Blue and Green target groups with matching health-check settings.
+1. Create the project VPC, two public subnets in distinct Availability Zones, Internet Gateway and public route table.
+2. Create the ALB security group and the EC2 target security group.
+3. Create the Blue and Green target groups with matching health-check settings.
+4. Create the ALB and listener, initially forwarding to Blue.
 5. Launch and validate Blue, then attach it to the Blue target group.
-6. Create the ALB and listener, initially forwarding to Blue.
-7. Launch Green, register it with the Green target group, and wait for a healthy target status.
-8. Smoke-test Green before changing production listener routing.
-9. Switch the listener to Green and verify the application response and CloudWatch metrics.
-10. If validation fails, switch the listener back to Blue and verify recovery.
+6. Launch Green, register it with the Green target group, and wait for a healthy target status.
+7. Smoke-test Green before changing production listener routing.
+8. Switch the listener to Green and verify the application response and CloudWatch metrics.
+9. If validation fails, switch the listener back to Blue and verify recovery.
 
 ## 6. Health-check and smoke-test design
 
@@ -86,7 +85,7 @@ The initial dashboard and alarms will use metrics available without installing a
 
 Memory utilization is not available as a standard EC2 metric; it will be omitted unless CloudWatch Agent installation is supported and justified. Alarm thresholds will be documented and selected after a baseline test, rather than presented as universal production thresholds.
 
-## 8. Cost and safety controls
+## 8. Scope and cleanup
 
 - Use the smallest instance type permitted by the account and keep both instances running only for the lab period.
 - The account is a full-permission account, not assumed to be an AWS Academy sandbox. Check the AWS Billing console and Cost Explorer before deployment. An Application Load Balancer is billed hourly and by LCU usage; EC2 instances and public IPv4 addresses are billed separately. Do not leave the load balancer or instances running after the lab.
