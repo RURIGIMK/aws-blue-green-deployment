@@ -7,7 +7,7 @@
 
 ## 1. Objective
 
-The objective was to implement and validate a Blue-Green deployment strategy using two Amazon EC2 web environments behind an Application Load Balancer. The design provides a controlled way to deploy a new environment, route production traffic to it after validation, and restore traffic to the previous environment if required.
+The project demonstrates a Blue-Green deployment using two Amazon EC2 web environments behind an Application Load Balancer. The new environment can be tested before production traffic is moved to it. The previous environment remains available so traffic can be moved back if necessary.
 
 ## 2. Architecture and resources
 
@@ -19,27 +19,27 @@ The implementation uses one VPC, two public subnets in separate Availability Zon
 | Public subnet A | `10.0.0.0/20`, `us-west-2a` |
 | Public subnet B | `10.0.16.0/20`, `us-west-2b` |
 | Load balancer | `blue-green-alb`, HTTP port 80 |
-| Blue compute | `blue-web-1`, `i-0b5bb01e9de1eb394` |
-| Green compute | `green-web-1`, `i-09be9ec1beab95ecb` |
+| Blue compute | `blue-web-1` |
+| Green compute | `green-web-1` |
 | Target groups | `blue-green-blue-tg`, `blue-green-green-tg` |
 | Health check | HTTP `/health`, expected status 200 |
 
-Both instances run Amazon Linux 2023 with Apache HTTP Server. Each serves a distinct static page identifying its environment. The EC2 security group accepts HTTP only from the ALB security group.
+Both instances run Amazon Linux 2023 with Apache HTTP Server. Each serves a page that identifies its environment. The EC2 security group accepts HTTP traffic only from the ALB security group.
 
 ## 3. Deployment and validation
 
-Blue was deployed first and verified through the ALB. Green was then deployed separately, registered in its target group and checked using the target-group health status and application endpoint. A temporary query-string rule was used to test Green while the default route still pointed to Blue. That temporary rule was removed after the test.
+Blue was deployed first and checked through the ALB. Green was then deployed separately, registered in its target group and checked using the target-group health status and application endpoint. A temporary query-string rule was used to test Green while the default route still pointed to Blue. The temporary rule was removed after the test.
 
-The ALB default action was then changed to Green 100% and Blue 0%. The live ALB returned the Green page and the `/health` endpoint returned `healthy`.
+The ALB default action was changed to Green 100% and Blue 0%. The live ALB returned the Green page and the `/health` endpoint returned `healthy`.
 
 - [Live application](http://blue-green-alb-381653284.us-west-2.elb.amazonaws.com/)
 - [Live health endpoint](http://blue-green-alb-381653284.us-west-2.elb.amazonaws.com/health)
 
 ## 4. Traffic switching and rollback
 
-A manual rollback test was performed by changing the ALB listener to Blue 100% and Green 0%. The ALB served the Blue page and its health endpoint returned `healthy`. The listener was then restored to Green 100% and Blue 0%. Green was verified again through both the application and health endpoints.
+A manual rollback test was performed by changing the ALB listener to Blue 100% and Green 0%. The ALB served the Blue page and its health endpoint returned `healthy`. The listener was then restored to Green 100% and Blue 0%. Green was checked again through both the application and health endpoints.
 
-This demonstrates successful manual traffic rollback and recovery. It does not demonstrate automatic rollback or failure-triggered automation because no automated controller was configured and no instance failure was injected.
+This test confirms that traffic could be moved back to the retained Blue environment and then returned to Green. No instance was stopped or deliberately damaged. Automatic rollback and failure-triggered automation were not configured.
 
 ## 5. Monitoring
 
@@ -53,25 +53,39 @@ Five alarms were created:
 4. `Blue-No-Healthy-Hosts`: Blue minimum healthy host count below 1.
 5. `Green-No-Healthy-Hosts`: Green minimum healthy host count below 1.
 
-The selected per-load-balancer metric list did not expose target 5XX count during configuration. The dashboard includes target 4XX count, but this is not represented as a substitute for 5XX monitoring. Memory monitoring was not configured because it requires an additional agent and was outside the baseline scope. Alarm notifications and automatic remediation actions were not configured.
+The selected per-load-balancer metric list did not show target 5XX count during setup. The dashboard includes target 4XX count, but this is not a replacement for 5XX monitoring. Memory monitoring was not configured because it requires an additional agent and was outside the project scope. Alarm notifications and automatic remediation actions were not configured.
 
-## 6. Reliability and limitations
+## 6. Screenshot evidence
 
-The implementation keeps both environments registered in separate target groups. The listener can be switched between them without rebuilding the instances. The rollback test confirmed that Blue continued serving requests after Green had become production.
+Five screenshots are included in the repository:
 
-The implementation is intentionally limited to the required web tier. It does not include ECS, RDS, NAT Gateway, a custom domain, HTTPS certificate, automatic deployment pipeline or automatic rollback. The sample application is static and is intended to demonstrate routing and environment identification rather than application business logic.
+| Image | Evidence |
+|---|---|
+| [Blue Environment](../screenshots/Blue%20Environment.png) | The Blue application page was served through the ALB. |
+| [Production Green Environment](../screenshots/Production%20Green%20Environment.png) | The Green application page was served through the ALB. |
+| [Healthy Status](../screenshots/Healthy%20Status.png) | The ALB health endpoint returned `healthy`. |
+| [CloudWatch Dashboard](../screenshots/CloudWatch%20Dashboard.png) | CPU utilization for both instances and the selected ALB metrics are visible. |
+| [CloudWatch Alarms](../screenshots/CloudWatch%20Alarms.png) | All five configured alarms are shown in the OK state. |
 
-The lab uses HTTP for simplicity. A production implementation should use HTTPS, private application subnets where appropriate, stronger application-level readiness checks, controlled administrative access, notification actions and tested automation.
+The screenshots do not show the VPC, security-group rules, EC2 instance list, target-group health details or listener weights. Those configurations and the rollback test are described in this report and the architecture and rollback documents.
 
-## 7. Conclusion
+## 7. Reliability and limitations
 
-The Blue-Green deployment was implemented using EC2, separate target groups and an ALB. Green was validated and promoted to production. A manual rollback to Blue was successfully tested, after which Green was restored and revalidated. CloudWatch monitoring was configured with a dashboard and five alarms. The final production listener state is Green 100%, Blue 0%.
+Both environments remain registered in separate target groups. The listener can be changed between them without rebuilding the instances. The rollback test confirmed that Blue continued serving requests after Green had become the production environment.
 
-## 8. Supporting project links
+The implementation is limited to the required web tier. It does not include ECS, RDS, NAT Gateway, a custom domain, HTTPS certificate, automated deployment pipeline or automatic rollback. The sample application is static and demonstrates routing and environment identification rather than application business logic.
 
-- [Main README and examiner links](../README.md)
+The lab uses HTTP for simplicity. A production implementation should use HTTPS, consider private application subnets, provide controlled administrative access, configure alert notifications and test automated recovery.
+
+## 8. Conclusion
+
+The Blue-Green deployment was implemented using EC2, separate target groups and an ALB. Green was validated and moved into production. A manual rollback to Blue was tested, after which Green was restored and checked again. CloudWatch monitoring was configured with a dashboard and five alarms. The final listener state sends all production traffic to Green.
+
+## 9. Project files
+
+- [Main README](../README.md)
 - [Architecture](../architecture/blue-green-architecture.md)
 - [CloudWatch monitoring](../docs/cloudwatch-monitoring.md)
 - [Traffic switch and rollback procedure](../docs/traffic-switch-and-rollback.md)
 - [Deployment and validation scripts](../scripts/README.md)
-- [Screenshot evidence index](../screenshots/README.md)
+- [Screenshot descriptions](../screenshots/README.md)
