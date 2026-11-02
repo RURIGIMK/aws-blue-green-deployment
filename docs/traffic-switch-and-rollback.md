@@ -35,11 +35,10 @@ Expected health response: `healthy`.
 
 ## CLI procedure
 
-The repository script `scripts/switch-traffic.sh` performs the same listener update. It requires `AWS_REGION` and `LISTENER_ARN`; target group ARNs have the deployed values as defaults.
+The repository script `scripts/switch-traffic.sh` discovers the ALB listener and target group ARNs by their resource names using AWS CLI. It uses `AWS_REGION` (default `us-west-2`) and requires an authenticated AWS CLI profile or role with Elastic Load Balancing permissions.
 
 ```bash
 export AWS_REGION=us-west-2
-export LISTENER_ARN='arn:aws:elasticloadbalancing:us-west-2:325657596892:listener/app/blue-green-alb/ef513b7fdfdfbae0/9effab1f016ec5db'
 
 # Roll back to Blue
 ./scripts/switch-traffic.sh blue
@@ -50,7 +49,7 @@ export LISTENER_ARN='arn:aws:elasticloadbalancing:us-west-2:325657596892:listene
 ./scripts/health-check.sh http://blue-green-alb-381653284.us-west-2.elb.amazonaws.com/ GREEN
 ```
 
-The CLI command changes the default listener action and therefore affects live traffic. Verify account, region and ARNs before running it.
+The CLI command changes the default listener action and therefore affects live traffic. Verify the AWS account and region before running it. Resource names can be overridden through the environment variables documented in the script.
 
 ## Observed rollback and recovery test
 
