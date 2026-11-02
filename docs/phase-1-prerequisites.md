@@ -1,36 +1,28 @@
-# Phase 1 Execution Checklist: Blank AWS Environment
+# Initial Design and AWS Prerequisites
 
-## Confirmed project context
+## Project setup
 
-- AWS account: user confirms full permissions.
-- Region: US West (Oregon), `us-west-2`.
-- Starting point: blank project environment; no existing project resources or billing budgets/cost alerts are being reused.
-- Repository: `RURIGIMK/aws-blue-green-deployment`.
+The project was built in US West (Oregon), `us-west-2`, using the AWS account available for the Moringa School DevOps capstone. The repository is [aws-blue-green-deployment](https://github.com/RURIGIMK/aws-blue-green-deployment).
 
-## Architecture baseline
+## Design decisions
 
-The environment has no VPCs. Create one project VPC with two public subnets in two distinct Availability Zones, an Internet Gateway and a public route table. Do not create private subnets, NAT Gateways or VPC endpoints for this baseline. Deploy one internet-facing Application Load Balancer and two EC2 instances (Blue and Green), each registered in a separate target group. EC2 instances will accept application traffic only from the ALB security group.
+The implementation uses:
+- One VPC with two public subnets in separate Availability Zones.
+- An Internet Gateway and a public route table.
+- One internet-facing Application Load Balancer.
+- Two Amazon EC2 instances, one for Blue and one for Green.
+- A separate ALB target group for each instance.
+- Security groups that allow public HTTP traffic to the ALB and allow application traffic to EC2 only from the ALB security group.
+- CloudWatch metrics, a dashboard and alarms.
 
-This design uses public EC2 instances for simplicity and cost control. Administrative access should use Systems Manager Session Manager if the required instance profile and connectivity are available. If not, use a temporary SSH rule restricted to the user's current public IP and remove it after use.
+The instances use Amazon Linux 2023 and Apache HTTP Server. The target groups check the `/health` path and expect HTTP 200.
 
-## Scope controls
+## Scope
 
-Only implement resources and evidence that support the assignment deliverables. Do not create an AWS Budget, RDS, ECS, NAT Gateway, paid domain or optional automation. Clean up project resources after evidence has been collected.
+The lab was kept to EC2, the ALB, target groups, networking and CloudWatch. ECS, RDS, NAT Gateway, a custom domain and automated deployment services were not included.
 
-## Phase 1 verification gates
+## Deployed network
 
-- [ ] Create the project VPC and two public subnets in distinct Availability Zones.
-- [ ] Attach an Internet Gateway and configure the public route table.
-- [ ] Create the ALB and EC2 security groups with least-privilege inbound rules.
-- [ ] Select an eligible EC2 instance type and supported AMI for both environments.
+The VPC is `blue-green-vpc` with CIDR `10.0.0.0/16`. The two public subnets are `10.0.0.0/20` in `us-west-2a` and `10.0.16.0/20` in `us-west-2b`. Both use the public route table connected to the Internet Gateway.
 
-## Screenshot evidence
-
-Store screenshots in `screenshots/` using these filenames:
-- `01-blue-green-network.png`: network configuration supporting the Blue/Green EC2 instances and ALB, if required as architecture evidence.
-
-Do not capture passwords, access keys, account numbers, payment information or other secrets.
-
-## Status
-
-Architecture baseline documented. User confirms there are no VPCs or existing project resources. Region is `us-west-2`. No AWS resources have been created. Budget creation and non-deliverable screenshots are excluded.
+See [the deployed architecture](../architecture/blue-green-architecture.md) for the resource layout and [the implementation report](../report/implementation-report.md) for the deployment and test results.
