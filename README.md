@@ -54,11 +54,11 @@ flowchart TB
 | Public subnet B | `10.0.16.0/20`, `us-west-2b` |
 | Load balancer | `blue-green-alb` |
 | ALB DNS | `blue-green-alb-381653284.us-west-2.elb.amazonaws.com` |
-| Blue instance | `blue-web-1`, `i-0b5bb01e9de1eb394` |
-| Green instance | `green-web-1`, `i-09be9ec1beab95ecb` |
+| Blue instance | `blue-web-1`, Amazon Linux 2023, `t3.micro` |
+| Green instance | `green-web-1`, Amazon Linux 2023, `t3.micro` |
 | Blue target group | `blue-green-blue-tg` |
 | Green target group | `blue-green-green-tg` |
-| Application | Amazon Linux 2023 with Apache HTTP Server |
+| Application | Apache HTTP Server |
 | Health endpoint | `/health`, returns `healthy` |
 | Final listener weights | Green 100%, Blue 0% |
 
@@ -111,7 +111,7 @@ The dashboard includes EC2 CPU and available ALB request, response-time and targ
 7. If validation fails, use `scripts/switch-traffic.sh blue` to roll back.
 8. Follow the [traffic-switch guide](docs/traffic-switch-and-rollback.md) and [monitoring guide](docs/cloudwatch-monitoring.md).
 
-The scripts require AWS CLI credentials with the relevant permissions. They do not contain credentials. Review and configure environment variables before running them.
+The scripts require AWS CLI credentials with the relevant permissions. They do not contain credentials. The traffic-switch script discovers the listener and target group ARNs by resource name, so account-specific ARNs do not need to be committed.
 
 ## Scope and limitations
 
@@ -125,7 +125,7 @@ The scripts require AWS CLI credentials with the relevant permissions. They do n
 
 ## Security
 
-Never commit AWS access keys, secret keys, passwords, private keys, session tokens or other credentials. Use an AWS CLI profile or environment-based authentication outside the repository. The scripts accept resource identifiers through environment variables.
+Never commit AWS access keys, secret keys, passwords, private keys, session tokens or account-specific resource ARNs. Use an AWS CLI profile or role for authentication outside the repository.
 
 ## Status
 
