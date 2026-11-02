@@ -1,5 +1,5 @@
-# Final Report
+# Implementation Report
 
-The implementation report is available in [`implementation-report.md`](implementation-report.md). It records the deployed architecture, traffic cutover, CloudWatch monitoring, and the observed rollback and recovery test.
+The [implementation report](implementation-report.md) describes the deployed EC2 and ALB configuration, the Blue-to-Green cutover, the manual rollback test, and the CloudWatch dashboard and alarms.
 
-The final PDF and AWS screenshots will be added after the evidence capture stage.
+The [screenshots directory](../screenshots/) contains the five application and CloudWatch captures currently available for the project.
