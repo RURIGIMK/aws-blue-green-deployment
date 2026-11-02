@@ -18,12 +18,11 @@ else
   exit 2
 fi
 
-if ! command -v aws >/dev/null 2>&1; then
+command -v aws >/dev/null 2>&1 || {
   echo "AWS CLI is required." >&2
   exit 1
-fi
+}
 
-# Resolve resource ARNs at runtime so account-specific identifiers are not stored in the repository.
 LB_ARN="${LOAD_BALANCER_ARN:-$(aws elbv2 describe-load-balancers \
   --region "${AWS_REGION}" \
   --names "${LOAD_BALANCER_NAME}" \
@@ -50,18 +49,19 @@ GREEN_TG_ARN="${GREEN_TG_ARN:-$(aws elbv2 describe-target-groups \
 
 for resource_arn in "${LB_ARN}" "${LISTENER_ARN}" "${BLUE_TG_ARN}" "${GREEN_TG_ARN}"; do
   if [[ -z "${resource_arn}" || "${resource_arn}" == "None" ]]; then
-    echo "Could not resolve one or more ALB resources. Check the AWS region, names and permissions." >&2
+    echo "Could not resolve one or more ALB resources. Check the region, resource names and AWS permissions." >&2
     exit 1
   fi
 done
 
-ACTION_JSON="$(printf '{"Type":"forward","ForwardConfig":{"TargetGroups":[{"TargetGroupArn":"%s","Weight":%s},{"TargetGroupArn":"%s","Weight":%s}]}}' \
+# The CLI expects default-actions as a JSON array.
+ACTION_JSON="$(printf '[{"Type":"forward","ForwardConfig":{"TargetGroups":[{"TargetGroupArn":"%s","Weight":%s},{"TargetGroupArn":"%s","Weight":%s}]}}]' \
   "${BLUE_TG_ARN}" "${BLUE_WEIGHT}" "${GREEN_TG_ARN}" "${GREEN_WEIGHT}")"
 
-echo "Updating ${LOAD_BALANCER_NAME} in ${AWS_REGION}: Blue=${BLUE_WEIGHT}%, Green=${GREEN_WEIGHT}%"
+echo "Setting ${LOAD_BALANCER_NAME} in ${AWS_REGION}: Blue=${BLUE_WEIGHT}%, Green=${GREEN_WEIGHT}%"
 aws elbv2 modify-listener \
   --region "${AWS_REGION}" \
   --listener-arn "${LISTENER_ARN}" \
   --default-actions "${ACTION_JSON}"
 
-echo "Listener update submitted. Verify target health and test the application endpoint."
+echo "Listener update submitted. Check target health and test the application before considering the switch complete."
