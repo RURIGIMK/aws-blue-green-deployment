@@ -11,7 +11,7 @@ cat > /var/www/html/index.html <<'HTML'
 </head>
 <body>
     <h1>Blue Environment</h1>
-    <p>Blue deployment is currently active.</p>
+    <p>Blue deployment is currently active. From Rurigi :)</p>
     <p>Environment: BLUE</p>
 </body>
 </html>
