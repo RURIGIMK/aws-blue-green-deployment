@@ -74,19 +74,27 @@ Five alarms were created:
 
 The alarms were created without notification actions. The metric browser did not show the target 5XX metric in the per-load-balancer group during setup. The dashboard therefore shows target 4XX count as a separate metric; it is not a substitute for 5XX monitoring. More detail is in [CloudWatch monitoring](docs/cloudwatch-monitoring.md).
 
-## Screenshots
+## Screenshot evidence
 
-The screenshots currently in the repository show the two application environments, the health endpoint, the CloudWatch dashboard and the five alarms.
+The repository contains screenshots of the application, monitoring and deployed AWS resources.
 
-| Screenshot | What it shows |
+| Screenshot | Evidence |
 |---|---|
-| [Blue Environment](screenshots/Blue%20Environment.png) | Blue application page |
-| [Production Green Environment](screenshots/Production%20Green%20Environment.png) | Green application page |
+| [Blue Environment](screenshots/Blue%20Environment.png) | Blue application page served through the ALB |
+| [Production Green Environment](screenshots/Production%20Green%20Environment.png) | Green application page served through the ALB |
 | [Healthy Status](screenshots/Healthy%20Status.png) | Health endpoint response |
 | [CloudWatch Dashboard](screenshots/CloudWatch%20Dashboard.png) | CPU and ALB metric charts |
 | [CloudWatch Alarms](screenshots/CloudWatch%20Alarms.png) | Five alarms, all shown in OK state |
+| [VPC configuration](screenshots/vpc-configuration.png) | VPC name, ID and Available state |
+| [VPC subnets](screenshots/vpc-subnets.png) | Both named public subnets and Available states |
+| [ALB security group](screenshots/security-group-alb.png) | ALB security group identity and inbound-rule count |
+| [EC2 security group](screenshots/security-group-ec2.png) | EC2 security group identity and inbound-rule count |
+| [EC2 instances](screenshots/ec2-instances.png) | Blue and Green instance names, IDs, running states and instance types |
+| [Blue target group](screenshots/blue-target-health.png) | Blue target group summary showing one healthy target |
+| [Green target group](screenshots/green-target-health.png) | Green target group summary showing one healthy target |
+| [Production listener weights](screenshots/production-listener-weights.png) | Green 100%, Blue 0% on the HTTP:80 default action |
 
-See the [screenshots page](screenshots/README.md) for notes on each image.
+Some AWS console captures show resource summary pages rather than the underlying configuration tables. In particular, the VPC and subnet images do not display CIDR values, the security-group images do not display the inbound rule details, the EC2 list does not show Availability Zones, and the target-group images show aggregate health counts rather than the registered-target rows. The listener screenshot does show the final forwarding weights. See the [screenshot notes](screenshots/README.md) for the evidence boundaries of each image.
 
 ## Repository contents
 
@@ -109,4 +117,3 @@ The traffic-switch script requires AWS CLI v2 and an authenticated AWS profile o
 This lab uses two EC2 instances, two target groups, one ALB and CloudWatch. It does not use ECS, RDS, NAT Gateway, a custom domain, HTTPS or automated deployment orchestration. The application pages are static and are used to identify which environment receives traffic.
 
 HTTP is used for this exercise. A production deployment should use HTTPS and review network isolation, administrative access, alert notifications and automated recovery.
-
