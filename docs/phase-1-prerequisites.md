@@ -9,7 +9,7 @@
 
 ## Architecture baseline
 
-Use the account's default VPC if it exists and has suitable subnets in at least two Availability Zones. Only create a dedicated VPC if no suitable default VPC exists. Deploy one internet-facing Application Load Balancer and two EC2 instances (Blue and Green), each registered in a separate target group. EC2 instances will accept application traffic only from the ALB security group.
+The environment has no VPCs. Create one project VPC with two public subnets in two distinct Availability Zones, an Internet Gateway and a public route table. Do not create private subnets, NAT Gateways or VPC endpoints for this baseline. Deploy one internet-facing Application Load Balancer and two EC2 instances (Blue and Green), each registered in a separate target group. EC2 instances will accept application traffic only from the ALB security group.
 
 This design uses public EC2 instances for simplicity and cost control. Administrative access should use Systems Manager Session Manager if the required instance profile and connectivity are available. If not, use a temporary SSH rule restricted to the user's current public IP and remove it after use.
 
@@ -19,11 +19,10 @@ Only implement resources and evidence that support the assignment deliverables. 
 
 ## Phase 1 verification gates
 
-- [ ] Confirm selected region is `us-west-2`.
-- [ ] Confirm EC2, VPC, Elastic Load Balancing and CloudWatch console access.
-- [ ] Inspect service quotas and available Availability Zones.
-- [ ] Select an eligible low-cost EC2 instance type and supported AMI.
-- [ ] Finalize network and security configuration.
+- [ ] Create the project VPC and two public subnets in distinct Availability Zones.
+- [ ] Attach an Internet Gateway and configure the public route table.
+- [ ] Create the ALB and EC2 security groups with least-privilege inbound rules.
+- [ ] Select an eligible EC2 instance type and supported AMI for both environments.
 
 ## Screenshot evidence
 
@@ -34,4 +33,4 @@ Do not capture passwords, access keys, account numbers, payment information or o
 
 ## Status
 
-Architecture baseline documented. No AWS resources have been created. The user has confirmed a blank starting environment and region `us-west-2`. Budget creation is excluded because it is not a project deliverable.
+Architecture baseline documented. User confirms there are no VPCs or existing project resources. Region is `us-west-2`. No AWS resources have been created. Budget creation and non-deliverable screenshots are excluded.
