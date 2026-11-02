@@ -13,15 +13,9 @@ Use the account's default VPC if it exists and has suitable subnets in at least 
 
 This design uses public EC2 instances for simplicity and cost control. Administrative access should use Systems Manager Session Manager if the required instance profile and connectivity are available. If not, use a temporary SSH rule restricted to the user's current public IP and remove it after use.
 
-## Cost guardrails
+## Scope controls
 
-Before creating compute or load-balancing resources:
-1. Open Billing and Cost Management and confirm the account's billing access.
-2. Create an AWS Budget with a monthly cost limit agreed with the user.
-3. Configure notifications at 50%, 80% and 100% of the budget, and a forecast notification if supported.
-4. Understand that a budget is an alerting mechanism, not a hard spending cap.
-5. Do not create NAT Gateways, RDS, paid domain names, or optional services in the baseline.
-6. Stop or terminate lab resources after evidence is collected. Deleting EC2 instances alone does not delete the ALB, target groups, security groups, Elastic IPs or other billable resources.
+Only implement resources and evidence that support the assignment deliverables. Do not create an AWS Budget, RDS, ECS, NAT Gateway, paid domain or optional automation. Clean up project resources after evidence has been collected.
 
 ## Phase 1 verification gates
 
@@ -34,9 +28,7 @@ Before creating compute or load-balancing resources:
 ## Screenshot evidence
 
 Store screenshots in `screenshots/` using these filenames:
-- `01-budget-created.png`: budget configuration and alert thresholds (hide account/payment details).
-- `02-region-and-services.png`: console region selector and accessible services, if useful.
-- `03-vpc-design.png`: later, after the VPC and subnets are created.
+- `01-blue-green-network.png`: network configuration supporting the Blue/Green EC2 instances and ALB, if required as architecture evidence.
 
 Do not capture passwords, access keys, account numbers, payment information or other secrets.
 
