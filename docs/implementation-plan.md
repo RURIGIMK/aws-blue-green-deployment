@@ -10,7 +10,7 @@
 | Traffic cutover | Changed the ALB listener to Green 100% |
 | Rollback test | Changed the listener to Blue 100%, checked the Blue page and health endpoint, then restored Green |
 | Monitoring | Created the CloudWatch dashboard and five alarms |
-| Documentation | Added the architecture, scripts, monitoring notes, rollback procedure and implementation report |
+| Documentation | Added the architecture, scripts, monitoring notes, rollback procedure, implementation report and screenshot descriptions |
 
 ## Current deployment
 
@@ -18,6 +18,6 @@ The ALB listener sends 100% of production traffic to the Green target group. The
 
 ## Evidence in the repository
 
-The [screenshots directory](../screenshots/) currently contains five images: the Blue page, Green page, health endpoint, CloudWatch dashboard and CloudWatch alarm list. The screenshots page describes what each image shows.
+The [screenshots directory](../screenshots/) contains thirteen images covering the Blue and Green application pages, health endpoint, CloudWatch dashboard and alarms, VPC and subnet summaries, security-group summaries, EC2 instance list, target-group health summaries and final listener weights.
 
-The network, target health and listener configuration are described in the architecture and implementation report, but are not included in the current screenshot set.
+The images show the resource identities and selected states described in the [screenshot index](../screenshots/README.md). Some configuration details, including subnet CIDRs, security-group rule rows and registered-target rows, are not visible in the relevant captures. The screenshot index records these limitations.
