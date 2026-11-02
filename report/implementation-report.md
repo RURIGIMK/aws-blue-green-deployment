@@ -57,17 +57,27 @@ The selected per-load-balancer metric list did not show target 5XX count during 
 
 ## 6. Screenshot evidence
 
-Five screenshots are included in the repository:
+The repository contains thirteen screenshots covering the application, monitoring and AWS resource configuration.
 
-| Image | Evidence |
+| Image | Evidence visible in the capture |
 |---|---|
-| [Blue Environment](../screenshots/Blue%20Environment.png) | The Blue application page was served through the ALB. |
-| [Production Green Environment](../screenshots/Production%20Green%20Environment.png) | The Green application page was served through the ALB. |
-| [Healthy Status](../screenshots/Healthy%20Status.png) | The ALB health endpoint returned `healthy`. |
-| [CloudWatch Dashboard](../screenshots/CloudWatch%20Dashboard.png) | CPU utilization for both instances and the selected ALB metrics are visible. |
-| [CloudWatch Alarms](../screenshots/CloudWatch%20Alarms.png) | All five configured alarms are shown in the OK state. |
+| [Blue Environment](../screenshots/Blue%20Environment.png) | Blue application page served through the ALB |
+| [Production Green Environment](../screenshots/Production%20Green%20Environment.png) | Green application page served through the ALB |
+| [Healthy Status](../screenshots/Healthy%20Status.png) | ALB health endpoint returned `healthy` |
+| [CloudWatch Dashboard](../screenshots/CloudWatch%20Dashboard.png) | CPU utilization for both instances and selected ALB metrics |
+| [CloudWatch Alarms](../screenshots/CloudWatch%20Alarms.png) | Five configured alarms shown in the OK state |
+| [VPC configuration](../screenshots/vpc-configuration.png) | VPC name, ID and Available state; CIDR is not visible |
+| [VPC subnets](../screenshots/vpc-subnets.png) | Two named subnets and Available states; CIDRs and AZ columns are not visible |
+| [ALB security group](../screenshots/security-group-alb.png) | Security group name and inbound-rule count; rule details are not visible |
+| [EC2 security group](../screenshots/security-group-ec2.png) | Security group name and inbound-rule count; rule details are not visible |
+| [EC2 instances](../screenshots/ec2-instances.png) | Blue and Green names, instance IDs, running states and instance types |
+| [Blue target group](../screenshots/blue-target-health.png) | One healthy target and zero unhealthy targets in the Blue group |
+| [Green target group](../screenshots/green-target-health.png) | One healthy target and zero unhealthy targets in the Green group |
+| [Production listener weights](../screenshots/production-listener-weights.png) | HTTP:80 default action shows Green 100% and Blue 0% |
 
-The screenshots do not show the VPC, security-group rules, EC2 instance list, target-group health details or listener weights. Those configurations and the rollback test are described in this report and the architecture and rollback documents.
+The screenshots provide visual evidence of the listed resource identities and states. Some images show summary pages rather than detailed settings. The VPC CIDR, subnet CIDRs and Availability Zones, security-group inbound rule rows, EC2 Availability Zones and registered-target rows are not visible in the corresponding captures. The listener screenshot does show the final forwarding weights directly.
+
+The Blue rollback listener state was tested and is described in Section 4, but a screenshot of the listener while Blue was at 100% is not included.
 
 ## 7. Reliability and limitations
 
