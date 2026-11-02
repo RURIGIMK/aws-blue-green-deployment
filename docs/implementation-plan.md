@@ -1,34 +1,23 @@
-# Implementation Plan and Completion Record
+# Implementation Record
 
-The project was implemented in phases. Each phase was checked before proceeding.
+| Stage | Work completed |
+|---|---|
+| Network | Created the VPC, two public subnets, Internet Gateway and public route table |
+| Security | Created ALB and EC2 security groups |
+| Blue environment | Launched the Blue EC2 instance and registered it in the Blue target group |
+| Green environment | Launched the Green EC2 instance and registered it in the Green target group |
+| Health checks | Confirmed both targets healthy using the `/health` endpoint |
+| Traffic cutover | Changed the ALB listener to Green 100% |
+| Rollback test | Changed the listener to Blue 100%, checked the Blue page and health endpoint, then restored Green |
+| Monitoring | Created the CloudWatch dashboard and five alarms |
+| Documentation | Added the architecture, scripts, monitoring notes, rollback procedure and implementation report |
 
-| Phase | Scope | Result |
-|---|---|---|
-| 1 | Architecture and AWS prerequisites | Complete |
-| 2 | VPC, subnets, security groups, Blue instance and ALB | Complete |
-| 3 | Green instance, target group and health validation | Complete |
-| 4 | ALB traffic cutover to Green | Complete |
-| 5 | CloudWatch dashboard and alarms | Complete |
-| 6 | Manual rollback to Blue and recovery to Green | Complete |
-| 7 | Repository documentation and submission evidence | Documentation in progress; screenshots captured at final stage |
+## Current deployment
 
-## Completion checks
+The ALB listener sends 100% of production traffic to the Green target group. The Blue target group remains registered and can be selected for a manual rollback.
 
-- [x] Blue and Green EC2 instances running.
-- [x] Separate target groups created and registered.
-- [x] Both target groups reported healthy.
-- [x] ALB listener routes production traffic to Green.
-- [x] Green application and health endpoint verified through the ALB.
-- [x] Rollback to Blue performed and verified through the ALB.
-- [x] Green restored and verified through the ALB.
-- [x] Temporary Green validation listener rule removed.
-- [x] CloudWatch dashboard created.
-- [x] CPU alarms created for both EC2 instances.
-- [x] ALB target response-time alarm created.
-- [x] Healthy-host alarms created for both target groups.
-- [ ] Final screenshots added to the repository.
-- [ ] Final PDF report generated and added to the repository.
+## Evidence in the repository
 
-## Evidence rules
+The [screenshots directory](../screenshots/) currently contains five images: the Blue page, Green page, health endpoint, CloudWatch dashboard and CloudWatch alarm list. The screenshots page describes what each image shows.
 
-Only observed configuration and test results are described as completed. Screenshots should be captured from the live AWS console and stored in `screenshots/` using descriptive filenames. Do not include credentials, private keys or other secrets.
+The network, target health and listener configuration are described in the architecture and implementation report, but are not included in the current screenshot set.
