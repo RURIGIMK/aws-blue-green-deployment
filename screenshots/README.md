@@ -1,32 +1,48 @@
-# AWS Evidence Screenshots
+# Screenshots
 
-Capture the following screenshots together at the final evidence stage. Use the actual AWS console and live application. Save the images in this directory with the exact filenames below.
+These are the screenshots currently included with the project. They were captured from the running application and the AWS console.
 
-## Required evidence
+## Application checks
 
-| Filename | Capture |
-|---|---|
-| `01-vpc-and-subnets.png` | VPC details showing the project VPC and both public subnets in separate Availability Zones |
-| `02-security-groups.png` | ALB and EC2 security-group rules, showing HTTP access to EC2 restricted to the ALB security group |
-| `03-blue-green-ec2-instances.png` | EC2 instances list showing both Blue and Green instances running |
-| `04-blue-target-group-healthy.png` | Blue target group with its registered target Healthy |
-| `05-green-target-group-healthy.png` | Green target group with its registered target Healthy |
-| `06-alb-listener-green-production.png` | ALB HTTP:80 default action showing Green 100% and Blue 0% |
-| `07-live-green-application.png` | Browser showing the live Green Environment page through the ALB |
-| `08-live-green-health-check.png` | Browser showing the ALB `/health` endpoint response `healthy` |
-| `09-cloudwatch-dashboard.png` | CloudWatch dashboard `BlueGreenDeploymentMonitoring` with its saved metric widgets |
-| `10-cloudwatch-alarms.png` | CloudWatch alarm list showing the five project alarms |
-| `11-rollback-blue-validation.png` | Evidence of the rollback test: listener set to Blue 100%, Green 0%, and Blue application page or health response |
-| `12-final-green-restoration.png` | Final listener weights Green 100%, Blue 0%, with the Green application and health endpoint verified |
+### Blue Environment
 
-## Capture guidance
+![Blue Environment](Blue%20Environment.png)
 
-- Keep the AWS resource name, status and relevant configuration visible.
-- For browser tests, keep the ALB URL visible where practical.
-- For listener screenshots, include both target groups and their weights.
-- For the dashboard, ensure the dashboard name and chart titles are visible.
-- For alarms, show all five alarm names and their states if the page layout permits.
-- Do not include credentials, access keys, session tokens or other secrets.
-- Do not fabricate, edit to misrepresent, or use mockups in place of AWS Console evidence.
+The ALB served the Blue page during the Blue routing test. The page identifies the environment as BLUE.
 
-The final README and report already link to the live application, health endpoint, AWS console views and the relevant documentation. Screenshots provide supporting evidence of the deployed configuration and observed tests.
+### Production Green Environment
+
+![Production Green Environment](Production%20Green%20Environment.png)
+
+The ALB served the Green page after the production listener was switched to Green.
+
+### Health endpoint
+
+![Health endpoint](Healthy%20Status.png)
+
+The browser shows the response from the ALB health endpoint: `healthy`.
+
+## CloudWatch
+
+### Dashboard
+
+![CloudWatch dashboard](CloudWatch%20Dashboard.png)
+
+The dashboard contains a CPU utilization chart for both EC2 instances and an ALB chart containing request count, target response time and target 4XX count.
+
+### Alarms
+
+![CloudWatch alarms](CloudWatch%20Alarms.png)
+
+The alarm list shows five alarms:
+- `Blue-No-Healthy-Hosts`
+- `Green-No-Healthy-Hosts`
+- `ALB-High-Response-Time`
+- `Green-High-CPU`
+- `Blue-High-CPU`
+
+All five alarms are shown in the **OK** state in this capture. No alarm actions are configured.
+
+## Evidence not shown in these images
+
+The current screenshot set does not include the VPC and subnet configuration, security-group rules, EC2 instance list, target-group health details, ALB listener weights or the Blue rollback listener setting. Those steps are described in the [architecture](../architecture/blue-green-architecture.md), [rollback guide](../docs/traffic-switch-and-rollback.md) and [implementation report](../report/implementation-report.md).
