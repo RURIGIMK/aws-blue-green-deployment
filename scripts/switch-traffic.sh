@@ -2,11 +2,10 @@
 set -euo pipefail
 
 ENVIRONMENT="${1:-}"
-
 AWS_REGION="${AWS_REGION:-us-west-2}"
-LISTENER_ARN="${LISTENER_ARN:-arn:aws:elasticloadbalancing:us-west-2:325657596892:listener/app/blue-green-alb/ef513b7fdfdfbae0/9effab1f016ec5db}"
-BLUE_TG_ARN="${BLUE_TG_ARN:-arn:aws:elasticloadbalancing:us-west-2:325657596892:targetgroup/blue-green-blue-tg/46008680c6484925}"
-GREEN_TG_ARN="${GREEN_TG_ARN:-arn:aws:elasticloadbalancing:us-west-2:325657596892:targetgroup/blue-green-green-tg/a1ffaecf78b51d86}"
+LOAD_BALANCER_NAME="${LOAD_BALANCER_NAME:-blue-green-alb}"
+BLUE_TG_NAME="${BLUE_TG_NAME:-blue-green-blue-tg}"
+GREEN_TG_NAME="${GREEN_TG_NAME:-blue-green-green-tg}"
 
 if [[ "${ENVIRONMENT}" == "blue" ]]; then
   BLUE_WEIGHT=100
@@ -24,10 +23,42 @@ if ! command -v aws >/dev/null 2>&1; then
   exit 1
 fi
 
+# Resolve resource ARNs at runtime so account-specific identifiers are not stored in the repository.
+LB_ARN="${LOAD_BALANCER_ARN:-$(aws elbv2 describe-load-balancers \
+  --region "${AWS_REGION}" \
+  --names "${LOAD_BALANCER_NAME}" \
+  --query 'LoadBalancers[0].LoadBalancerArn' \
+  --output text)}"
+
+LISTENER_ARN="${LISTENER_ARN:-$(aws elbv2 describe-listeners \
+  --region "${AWS_REGION}" \
+  --load-balancer-arn "${LB_ARN}" \
+  --query 'Listeners[?Port==`80`].ListenerArn | [0]' \
+  --output text)}"
+
+BLUE_TG_ARN="${BLUE_TG_ARN:-$(aws elbv2 describe-target-groups \
+  --region "${AWS_REGION}" \
+  --names "${BLUE_TG_NAME}" \
+  --query 'TargetGroups[0].TargetGroupArn' \
+  --output text)}"
+
+GREEN_TG_ARN="${GREEN_TG_ARN:-$(aws elbv2 describe-target-groups \
+  --region "${AWS_REGION}" \
+  --names "${GREEN_TG_NAME}" \
+  --query 'TargetGroups[0].TargetGroupArn' \
+  --output text)}"
+
+for resource_arn in "${LB_ARN}" "${LISTENER_ARN}" "${BLUE_TG_ARN}" "${GREEN_TG_ARN}"; do
+  if [[ -z "${resource_arn}" || "${resource_arn}" == "None" ]]; then
+    echo "Could not resolve one or more ALB resources. Check the AWS region, names and permissions." >&2
+    exit 1
+  fi
+done
+
 ACTION_JSON="$(printf '{"Type":"forward","ForwardConfig":{"TargetGroups":[{"TargetGroupArn":"%s","Weight":%s},{"TargetGroupArn":"%s","Weight":%s}]}}' \
   "${BLUE_TG_ARN}" "${BLUE_WEIGHT}" "${GREEN_TG_ARN}" "${GREEN_WEIGHT}")"
 
-echo "Updating listener in ${AWS_REGION}: Blue=${BLUE_WEIGHT}%, Green=${GREEN_WEIGHT}%"
+echo "Updating ${LOAD_BALANCER_NAME} in ${AWS_REGION}: Blue=${BLUE_WEIGHT}%, Green=${GREEN_WEIGHT}%"
 aws elbv2 modify-listener \
   --region "${AWS_REGION}" \
   --listener-arn "${LISTENER_ARN}" \
