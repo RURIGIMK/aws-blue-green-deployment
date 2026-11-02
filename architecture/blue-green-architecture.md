@@ -1,114 +1,94 @@
-# Phase 1: Architecture and AWS Prerequisites
+# Deployed Blue-Green Architecture
 
-## 1. Architecture decision
+## 1. Overview
 
-The project will use an EC2-based blue-green deployment behind one internet-facing Application Load Balancer (ALB). Blue and Green are separate EC2 environments. Each environment is registered with its own ALB target group.
+The project implements a two-environment deployment on Amazon EC2 behind one internet-facing Application Load Balancer (ALB). Blue and Green each have a dedicated target group. The ALB listener controls production routing.
 
-This is intentionally a focused web-tier implementation. ECS/Fargate and RDS are not included in the baseline because the assignment makes the application tier optional and the deployment strategy can be demonstrated without adding unnecessary services or cost.
+The final production state is Green at 100% and Blue at 0%. Both target groups remain available so that the listener can be changed manually to restore Blue if Green fails validation.
 
-## 2. Logical architecture
+## 2. Deployed resources
+
+| Resource | Actual configuration |
+|---|---|
+| Region | US West (Oregon), `us-west-2` |
+| VPC | `blue-green-vpc`, ID `vpc-0bb17d89970fff415`, CIDR `10.0.0.0/16` |
+| Public subnet A | `blue-green-subnet-public1-us-west-2a`, `10.0.0.0/20`, AZ `us-west-2a` |
+| Public subnet B | `blue-green-subnet-public2-us-west-2b`, `10.0.16.0/20`, AZ `us-west-2b` |
+| Internet Gateway | `blue-green-igw` |
+| Public route table | `blue-green-rtb-public` |
+| ALB security group | `blue-green-alb-sg`, inbound TCP 80 from `0.0.0.0/0` |
+| EC2 security group | `blue-green-ec2-sg`, inbound TCP 80 only from the ALB security group |
+| Load balancer | `blue-green-alb`, internet-facing, HTTP listener on port 80 |
+| ALB DNS | `blue-green-alb-381653284.us-west-2.elb.amazonaws.com` |
+
+## 3. Compute and target groups
+
+| Environment | EC2 instance | Private IP | Availability Zone | Target group | Target group ARN |
+|---|---|---|---|---|---|
+| Blue | `blue-web-1`, `i-0b5bb01e9de1eb394` | `10.0.10.74` | `us-west-2a` | `blue-green-blue-tg` | `arn:aws:elasticloadbalancing:us-west-2:325657596892:targetgroup/blue-green-blue-tg/46008680c6484925` |
+| Green | `green-web-1`, `i-09be9ec1beab95ecb` | `10.0.26.92` | `us-west-2b` | `blue-green-green-tg` | `arn:aws:elasticloadbalancing:us-west-2:325657596892:targetgroup/blue-green-green-tg/a1ffaecf78b51d86` |
+
+Both instances use Amazon Linux 2023 and `t3.micro`. Apache HTTP Server serves a simple environment-specific page. The health endpoint is the static file `/health`, which returns the text `healthy`.
+
+## 4. Target health checks
+
+Both target groups use HTTP on port 80, health-check path `/health`, success code 200, interval 15 seconds, timeout 5 seconds, healthy threshold 2 and unhealthy threshold 2. Both registered targets were observed as Healthy during implementation.
+
+## 5. Network and security
+
+The VPC has two public subnets in separate Availability Zones. Both subnets have public IPv4 auto-assignment enabled and route internet-bound traffic through the Internet Gateway.
+
+The ALB security group accepts HTTP traffic on port 80 from the internet. The EC2 security group accepts HTTP traffic only from the ALB security group. No inbound SSH rule was required for this demonstration.
+
+This is a simplified lab network. The instances are placed in public subnets, but the security group prevents direct public HTTP access to the application instances. A production design would normally consider private application subnets, HTTPS, stronger application health checks, and controlled administrative access.
+
+## 6. Traffic routing and validation
+
+1. Blue was launched and registered in the Blue target group.
+2. The ALB initially served the Blue page.
+3. Green was launched and registered in the Green target group.
+4. Green health was verified. A temporary query-string listener rule routed a test request to Green while the default route remained Blue.
+5. The temporary validation rule was deleted.
+6. The default listener action was changed to Green 100%, Blue 0%.
+7. The ALB returned the Green page and `/health` returned `healthy`.
+8. For rollback validation, the listener was changed to Blue 100%, Green 0%. The Blue page and health endpoint were verified.
+9. The listener was restored to Green 100%, Blue 0%. The Green page and health endpoint were verified again.
+
+The temporary query-string rule is not present in the final listener configuration.
+
+## 7. Logical architecture
 
 ```mermaid
-flowchart TD
-    U[User / Browser] --> ALB[Application Load Balancer]
-    ALB --> L[HTTP Listener]
-    L -->|Active target group| TG_B[Blue Target Group]
-    L -.->|After validated cutover| TG_G[Green Target Group]
-    TG_B --> B[Blue EC2 Instance]
-    TG_G --> G[Green EC2 Instance]
-    B --> BA[Blue web application]
-    G --> GA[Green web application]
-    B --> CW[CloudWatch]
-    G --> CW
-    ALB --> CW
+flowchart TB
+    U[User browser] --> ALB[blue-green-alb : HTTP 80]
+    ALB --> L[Default listener action]
+    L -->|100% final production| GTG[blue-green-green-tg]
+    L -.->|0%, retained for rollback| BTG[blue-green-blue-tg]
+    GTG --> G[green-web-1 / us-west-2b]
+    BTG --> B[blue-web-1 / us-west-2a]
+    CW[CloudWatch dashboard and alarms] -.-> ALB
+    CW -.-> G
+    CW -.-> B
 ```
 
-The listener will forward production traffic to Blue initially. Green will be deployed and registered separately, then validated through its target-group health status and a direct test path before the listener's default forwarding action is changed. The rollback procedure will restore the listener to Blue.
+## 8. Monitoring
 
-## 3. Planned AWS resources
+CloudWatch dashboard: `BlueGreenDeploymentMonitoring`.
 
-| Resource | Baseline configuration | Purpose |
-|---|---|---|
-| VPC | One new project VPC (`10.0.0.0/16`) | Network boundary |
-| Subnets | Two public subnets (`10.0.1.0/24` and `10.0.2.0/24`) in distinct Availability Zones | ALB availability and internet connectivity for lab instances |
-| Security groups | ALB security group and EC2 target security group | Restrict inbound access |
-| EC2 Blue | Smallest permitted eligible instance type | Current application version |
-| EC2 Green | Same instance type as Blue | Candidate application version |
-| Target group Blue | HTTP, application port, health path `/health` | Blue target registration and health |
-| Target group Green | HTTP, application port, health path `/health` | Green target registration and health |
-| Application Load Balancer | Internet-facing, HTTP listener for the lab unless HTTPS is available without extra cost | Single entry point and traffic switching |
-| CloudWatch | ALB and EC2 metrics, dashboard, alarms | Operational monitoring |
+Alarms:
+- `Blue-High-CPU`: CPUUtilization above 80%.
+- `Green-High-CPU`: CPUUtilization above 80%.
+- `ALB-High-Response-Time`: average TargetResponseTime above 1 second.
+- `Blue-No-Healthy-Hosts`: minimum HealthyHostCount below 1 for Blue.
+- `Green-No-Healthy-Hosts`: minimum HealthyHostCount below 1 for Green.
 
-The project region is **US West (Oregon), `us-west-2`**. The user confirms the account has full permissions and the starting environment has no VPCs. The project VPC will use `10.0.0.0/16`, with public subnets `10.0.1.0/24` and `10.0.2.0/24` in two distinct Availability Zones. The exact AZ names will be selected in the console.
+See [CloudWatch monitoring](../docs/cloudwatch-monitoring.md) for dimensions, periods, metric availability and limitations.
 
-## 4. Network and security rules
+## 9. Operational references
 
-- ALB security group: allow inbound HTTP (TCP 80) from the internet for the lab. HTTPS will only be added if a suitable certificate and domain are available without introducing unnecessary cost.
-- EC2 security group: allow the application port (planned TCP 80) only from the ALB security group. Do not expose the application port directly to the internet.
-- SSH: avoid opening SSH to the world. Prefer Systems Manager Session Manager if the account has the required IAM role and connectivity. Otherwise use a narrowly scoped temporary source IP rule and remove it after administration.
-- Use an instance role for AWS access where required. Do not put access keys, passwords or secrets in scripts or GitHub.
-- Use synthetic/demo content only. No personal or confidential data will be placed on the instances.
-
-## 5. Deployment and validation sequence
-
-1. Create the project VPC, two public subnets in distinct Availability Zones, Internet Gateway and public route table.
-2. Create the ALB security group and the EC2 target security group.
-3. Create the Blue and Green target groups with matching health-check settings.
-4. Create the ALB and listener, initially forwarding to Blue.
-5. Launch and validate Blue, then attach it to the Blue target group.
-6. Launch Green, register it with the Green target group, and wait for a healthy target status.
-7. Smoke-test Green before changing production listener routing.
-8. Switch the listener to Green and verify the application response and CloudWatch metrics.
-9. If validation fails, switch the listener back to Blue and verify recovery.
-
-## 6. Health-check and smoke-test design
-
-The web application will expose a lightweight `/health` endpoint that returns HTTP 200 only when the web process is ready to serve requests. The page will identify the environment and release/version so that the active deployment can be distinguished during testing.
-
-ALB target-group health is a deployment gate, not the only test. Before cutover, Green must:
-- report healthy in the Green target group;
-- return HTTP 200 from its health endpoint;
-- serve the expected Green release identifier;
-- pass a basic browser or HTTP smoke test.
-
-ALB health checks are configured per target group and the load balancer routes to healthy registered targets. Health-check success alone does not prove every application function works.
-
-## 7. Monitoring baseline
-
-The initial dashboard and alarms will use metrics available without installing additional agents:
-- EC2 CPU utilization;
-- ALB request count;
-- ALB HTTP 5XX responses;
-- ALB target 5XX responses;
-- ALB target response time;
-- healthy and unhealthy host counts.
-
-Memory utilization is not available as a standard EC2 metric; it will be omitted unless CloudWatch Agent installation is supported and justified. Alarm thresholds will be documented and selected after a baseline test, rather than presented as universal production thresholds.
-
-## 8. Scope and cleanup
-
-- Use the smallest instance type permitted by the account and keep both instances running only for the lab period.
-- The account is a full-permission account, not assumed to be an AWS Academy sandbox. Check the AWS Billing console and Cost Explorer before deployment. An Application Load Balancer is billed hourly and by LCU usage; EC2 instances and public IPv4 addresses are billed separately. Do not leave the load balancer or instances running after the lab.
-- Avoid NAT gateways, RDS, paid domain registration, paid certificates and other optional resources unless explicitly approved.
-- Tag resources with `Project=BlueGreenDeployment`, `Environment=Blue` or `Environment=Green`, and `Owner=StudentLab` where tags are supported.
-- Record resource IDs and region in the implementation notes.
-- Delete lab resources after evidence and assessment requirements are satisfied, while retaining repository documentation and screenshots.
-
-## 9. AWS prerequisites to verify
-
-- AWS account type and whether the account is still active.
-- Region selected for the project: `us-west-2` (confirmed).
-- Permission to use EC2, VPC, Elastic Load Balancing, CloudWatch and Systems Manager (if using Session Manager).
-- EC2 instance-type availability and vCPU quota.
-- Permission to create security groups, target groups, listeners and load balancers.
-- Availability of two suitable subnets in separate Availability Zones.
-- Any AWS Academy restrictions, spending limits or automatic lab shutdown rules.
-
-## 10. AWS references
-
-- [ALB target groups](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-target-groups.html)
-- [ALB target-group health checks](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/target-group-health-checks.html)
-- [ALB security groups](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-update-security-groups.html)
+- [Traffic switch and rollback](../docs/traffic-switch-and-rollback.md)
+- [Implementation report](../report/implementation-report.md)
+- [Scripts](../scripts/README.md)
 
 ---
-Status: architecture baseline documented; region `us-west-2` confirmed by user. No AWS resources have been created yet.
+Status: deployed configuration and observed validation results recorded.
