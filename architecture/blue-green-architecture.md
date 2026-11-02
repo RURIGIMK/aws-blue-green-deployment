@@ -11,7 +11,7 @@ The final production state is Green at 100% and Blue at 0%. Both target groups r
 | Resource | Actual configuration |
 |---|---|
 | Region | US West (Oregon), `us-west-2` |
-| VPC | `blue-green-vpc`, ID `vpc-0bb17d89970fff415`, CIDR `10.0.0.0/16` |
+| VPC | `blue-green-vpc`, CIDR `10.0.0.0/16` |
 | Public subnet A | `blue-green-subnet-public1-us-west-2a`, `10.0.0.0/20`, AZ `us-west-2a` |
 | Public subnet B | `blue-green-subnet-public2-us-west-2b`, `10.0.16.0/20`, AZ `us-west-2b` |
 | Internet Gateway | `blue-green-igw` |
@@ -23,12 +23,12 @@ The final production state is Green at 100% and Blue at 0%. Both target groups r
 
 ## 3. Compute and target groups
 
-| Environment | EC2 instance | Private IP | Availability Zone | Target group | Target group ARN |
-|---|---|---|---|---|---|
-| Blue | `blue-web-1`, `i-0b5bb01e9de1eb394` | `10.0.10.74` | `us-west-2a` | `blue-green-blue-tg` | `arn:aws:elasticloadbalancing:us-west-2:325657596892:targetgroup/blue-green-blue-tg/46008680c6484925` |
-| Green | `green-web-1`, `i-09be9ec1beab95ecb` | `10.0.26.92` | `us-west-2b` | `blue-green-green-tg` | `arn:aws:elasticloadbalancing:us-west-2:325657596892:targetgroup/blue-green-green-tg/a1ffaecf78b51d86` |
+| Environment | EC2 instance | Instance type | Availability Zone | Target group |
+|---|---|---|---|---|
+| Blue | `blue-web-1` | `t3.micro` | `us-west-2a` | `blue-green-blue-tg` |
+| Green | `green-web-1` | `t3.micro` | `us-west-2b` | `blue-green-green-tg` |
 
-Both instances use Amazon Linux 2023 and `t3.micro`. Apache HTTP Server serves a simple environment-specific page. The health endpoint is the static file `/health`, which returns the text `healthy`.
+Both instances use Amazon Linux 2023. Apache HTTP Server serves a simple environment-specific page. The health endpoint is the static file `/health`, which returns the text `healthy`.
 
 ## 4. Target health checks
 
