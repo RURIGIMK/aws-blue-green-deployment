@@ -14,11 +14,11 @@ These scripts document the repeatable steps used by the EC2-based Blue-Green dem
 ## Requirements
 
 - AWS CLI v2 for traffic switching.
-- An AWS CLI profile or role with permission to call `elasticloadbalancing:ModifyListener`.
+- An AWS CLI profile or role with permission to describe the ALB resources and call `elasticloadbalancing:ModifyListener`.
 - `curl` for health validation.
 - Network access to the ALB DNS name.
 
-No credentials are stored in these files. Authenticate through the AWS CLI outside the repository.
+No credentials or account-specific resource ARNs are stored in these files. Authenticate through the AWS CLI outside the repository.
 
 ## Validate the live deployment
 
@@ -33,17 +33,16 @@ The script defaults to the project's ALB endpoint and expects the Green environm
 
 ## Switch traffic
 
-Set the region and listener ARN, then run:
+The listener and target-group ARNs are discovered by resource name through AWS CLI. Set the region, then run:
 
 ```bash
 export AWS_REGION=us-west-2
-export LISTENER_ARN='arn:aws:elasticloadbalancing:us-west-2:325657596892:listener/app/blue-green-alb/ef513b7fdfdfbae0/9effab1f016ec5db'
 ./scripts/switch-traffic.sh blue
 ./scripts/health-check.sh
 ./scripts/switch-traffic.sh green
 ./scripts/health-check.sh
 ```
 
-The script uses the actual target group ARNs as defaults. It changes only the listener's default forwarding action. Review and verify the selected region and resource ARNs before execution.
+The default resource names are `blue-green-alb`, `blue-green-blue-tg` and `blue-green-green-tg`. They can be overridden with `LOAD_BALANCER_NAME`, `BLUE_TG_NAME` and `GREEN_TG_NAME`. The script changes only the listener's default forwarding action.
 
 **Important:** Running the script changes live traffic. Use it only when authorized and when the target environment is healthy. This lab uses a manual rollback process and does not implement automatic failover.
