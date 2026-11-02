@@ -39,7 +39,7 @@ The listener will forward production traffic to Blue initially. Green will be de
 | Application Load Balancer | Internet-facing, HTTP listener for the lab unless HTTPS is available without extra cost | Single entry point and traffic switching |
 | CloudWatch | ALB and EC2 metrics, dashboard, alarms | Operational monitoring |
 
-Actual instance type, AMI, VPC, subnet IDs, ports and region will be selected only after the AWS account and service restrictions are verified.
+The project region is confirmed as **US West (Oregon), `us-west-2`**. The AWS account is reported by the user to have full permissions. Actual instance type, AMI, VPC, subnet IDs and ports will be selected only after the account inventory and service quotas are inspected.
 
 ## 4. Network and security rules
 
@@ -89,7 +89,7 @@ Memory utilization is not available as a standard EC2 metric; it will be omitted
 ## 8. Cost and safety controls
 
 - Use the smallest instance type permitted by the account and keep both instances running only for the lab period.
-- Check whether the account allows Application Load Balancers and whether hourly/LCU charges are covered by the training environment.
+- The account is a full-permission account, not assumed to be an AWS Academy sandbox. Check the AWS Billing console and Cost Explorer before deployment. An Application Load Balancer is billed hourly and by LCU usage; EC2 instances and public IPv4 addresses are billed separately. Do not leave the load balancer or instances running after the lab.
 - Avoid NAT gateways, RDS, paid domain registration, paid certificates and other optional resources unless explicitly approved.
 - Tag resources with `Project=BlueGreenDeployment`, `Environment=Blue` or `Environment=Green`, and `Owner=StudentLab` where tags are supported.
 - Record resource IDs and region in the implementation notes.
@@ -98,7 +98,7 @@ Memory utilization is not available as a standard EC2 metric; it will be omitted
 ## 9. AWS prerequisites to verify
 
 - AWS account type and whether the account is still active.
-- Region selected for the project.
+- Region selected for the project: `us-west-2` (confirmed).
 - Permission to use EC2, VPC, Elastic Load Balancing, CloudWatch and Systems Manager (if using Session Manager).
 - EC2 instance-type availability and vCPU quota.
 - Permission to create security groups, target groups, listeners and load balancers.
@@ -112,4 +112,4 @@ Memory utilization is not available as a standard EC2 metric; it will be omitted
 - [ALB security groups](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-update-security-groups.html)
 
 ---
-Status: architecture baseline documented. No AWS resources have been created yet.
+Status: architecture baseline documented; region `us-west-2` confirmed by user. No AWS resources have been created yet.
